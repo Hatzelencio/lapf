@@ -12,9 +12,10 @@ type ClientAWS struct {
 	cli *ec2.Client
 }
 
-func newAWSClient(region string) *ClientAWS {
+func newAWSClient(profile, region string) *ClientAWS {
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithRegion(region),
+		config.WithSharedConfigProfile(profile),
 	)
 	if err != nil {
 		log.Fatalf("unable to load SDK config, %v", err)

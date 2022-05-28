@@ -3,6 +3,7 @@ package provider
 import (
 	"errors"
 	"fmt"
+	inputs "overlapping-finder/structs"
 	"strings"
 )
 
@@ -16,9 +17,9 @@ type CloudNetwork struct {
 	CidrBlock    string
 }
 
-func NewCloudProvider(providerName, region string) (ICloudProvider, error) {
-	if strings.ToLower(providerName) == "aws" {
-		return newAWSClient(region), nil
+func NewCloudProvider(in *inputs.RetrieveNetworkFromRegions, region string) (ICloudProvider, error) {
+	if strings.ToLower(in.ProviderName) == "aws" {
+		return newAWSClient(in.ProviderProfile, region), nil
 	}
 	return nil, errors.New(fmt.Sprintf("cloud provider: %v Does not exist."))
 }
