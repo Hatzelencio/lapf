@@ -6,6 +6,7 @@ import (
 	"github.com/urfave/cli/v2"
 	"log"
 	"overlapping-finder/cloud"
+	inputs "overlapping-finder/structs"
 	"sync"
 	"time"
 )
@@ -13,17 +14,11 @@ import (
 var validate *validator.Validate
 
 const (
-	cliRegionName   = "region"
-	cliProviderName = "provider"
-	cliOutputFormat = "output"
+	cliRegionName      = "region"
+	cliProviderName    = "provider"
+	cliProviderProfile = "profile"
+	cliOutputFormat    = "output"
 )
-
-type InputRetrieveNetworkFromRegions struct {
-	ProviderName string   `validate:"required"`
-	OutputFormat string   `validate:"required"`
-	Regions      []string `validate:"required"`
-	Arguments    []string `validate:"required"`
-}
 
 func newSpinner() *spinner.Spinner {
 	s := spinner.New(spinner.CharSets[11], 100*time.Millisecond)
@@ -32,7 +27,7 @@ func newSpinner() *spinner.Spinner {
 	return s
 }
 
-func newInputValidate(input *InputRetrieveNetworkFromRegions) error {
+func newInputValidate(input *inputs.RetrieveNetworkFromRegions) error {
 	validate = validator.New()
 
 	err := validate.Struct(input)
@@ -44,16 +39,16 @@ func newInputValidate(input *InputRetrieveNetworkFromRegions) error {
 	return nil
 }
 
-func retrieveAllNetworkFromRegions(input *InputRetrieveNetworkFromRegions) ([]provider.CloudNetwork, error) {
+func retrieveAllNetworkFromRegions(input *inputs.RetrieveNetworkFromRegions) ([]provider.CloudNetwork, error) {
 	var wg sync.WaitGroup
 	var ch = make(chan *ResultDescribeAllNetwork)
-	var vpcs []provider.CloudNetwork
+	var cloudNetworks []provider.CloudNetwork
 
 	for _, region := range input.Regions {
 		wg.Add(1)
 		go func(region string) {
 			defer wg.Done()
-			svc, err := provider.NewCloudProvider(input.ProviderName, region)
+			svc, err := provider.NewCloudProvider(input, region)
 			if err != nil {
 				log.Fatalf("%v", err)
 			}
@@ -67,20 +62,25 @@ func retrieveAllNetworkFromRegions(input *InputRetrieveNetworkFromRegions) ([]pr
 	}
 
 	for range input.Regions {
-		vpcs = append(vpcs, (<-ch).Networks...)
+		resultDescribeAllNetworks := <-ch
+		if err := resultDescribeAllNetworks.Err; err != nil {
+			return []provider.CloudNetwork{}, err
+		}
+		cloudNetworks = append(cloudNetworks, resultDescribeAllNetworks.Networks...)
 	}
 
 	wg.Wait()
 
-	return vpcs, nil
+	return cloudNetworks, nil
 }
 
 func newOverlappingFinder(c *cli.Context) error {
-	input := &InputRetrieveNetworkFromRegions{
-		ProviderName: c.String(cliProviderName),
-		OutputFormat: c.String(cliOutputFormat),
-		Regions:      c.StringSlice(cliRegionName),
-		Arguments:    c.Args().Slice(),
+	input := &inputs.RetrieveNetworkFromRegions{
+		ProviderName:    c.String(cliProviderName),
+		ProviderProfile: c.String(cliProviderProfile),
+		OutputFormat:    c.String(cliOutputFormat),
+		Regions:         c.StringSlice(cliRegionName),
+		Arguments:       c.Args().Slice(),
 	}
 
 	if err := newInputValidate(input); err != nil {

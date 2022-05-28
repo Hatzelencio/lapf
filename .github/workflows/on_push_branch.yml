@@ -6,10 +6,9 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
-    if: ${{ github.actor != 'github-actions' }}
     outputs:
-      tag_name: ${{ steps.create_tag.outputs.tag_name }}
       upload_url: ${{ steps.create_release.outputs.upload_url }}
+      tag_name: ${{ steps.create_tag.outputs.tag_name }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -20,10 +19,6 @@ jobs:
         shell: bash
         run: |
           echo ::set-output name=tag_name::$(grep Version README.md | awk '{print $3}')
-      - uses: actions/setup-go@v3
-        with:
-          go-version: '^1.18'
-      - run: go build -o lapf
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -34,13 +29,33 @@ jobs:
           release_name: "Release Version: ${{ steps.create_tag.outputs.tag_name }}"
           draft: false
           prerelease: false
+  build:
+    needs: [release]
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+        sufix: ['']
+        include:
+          - os: macos-11
+            sufix: '-darwin'
+    runs-on: ${{ matrix.os }}
+    if: ${{ github.actor != 'github-actions' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '^1.18'
+      - run: "go build -o lapf${{ matrix.sufix }}"
       - name: Upload Release Asset
         id: upload-release-asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./lapf
-          asset_name: lapf
+          upload_url: ${{ needs.release.outputs.upload_url }}
+          asset_path: "./lapf${{ matrix.sufix }}"
+          asset_name: "lapf${{ matrix.sufix }}"
           asset_content_type: application/octet-stream
