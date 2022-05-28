@@ -30,8 +30,12 @@ GLOBAL OPTIONS:
 Retrieve the latest executable from Github releases and set up the execution permissions
 
 ```bash
-wget https://github.com/asdf -o lapf
-chmod u+x !$ 
+curl -s https://api.github.com/repos/hatzelencio/lapf/releases/latest \                                                                                                     ──(Fri,May27)─┘
+| grep "browser_download_url" \
+| cut -d : -f 2,3 \
+| tr -d \" \
+| wget -qi -
+chmod u+x lapf 
 ```
 
 ### RAW Output
