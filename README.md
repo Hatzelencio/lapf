@@ -1,6 +1,6 @@
 ## LAPF - Overlapping Finder
 
-> Version: v0.0.2
+> Version: v0.0.3
 
 ------
 
@@ -27,15 +27,15 @@ GLOBAL OPTIONS:
 
 ## How to run it?
 
-Retrieve the latest executable from Github releases and set up the execution permissions
+Retrieve the latest executable from GitHub releases and set up the execution permissions
 
 ```bash
-curl -s https://api.github.com/repos/hatzelencio/lapf/releases/latest \                                                                                                     ──(Fri,May27)─┘
+curl -s https://api.github.com/repos/hatzelencio/lapf/releases/latest \
 | grep "browser_download_url" \
 | cut -d : -f 2,3 \
 | tr -d \" \
 | wget -qi -
-chmod u+x lapf 
+chmod u+x lapf*
 ```
 
 ### RAW Output
