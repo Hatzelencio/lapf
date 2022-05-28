@@ -1,0 +1,46 @@
+name: Continuous Delivery
+on:
+  push:
+    branches:
+      - 'main'
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    if: ${{ github.actor != 'github-actions' }}
+    outputs:
+      tag_name: ${{ steps.create_tag.outputs.tag_name }}
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Create tag name
+        id: create_tag
+        shell: bash
+        run: |
+          echo ::set-output name=tag_name::$(grep Version README.md | awk '{print $3}')
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '^1.18'
+      - run: go build -o lapf
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: "${{ steps.create_tag.outputs.tag_name }}"
+          release_name: "Release Version: ${{ steps.create_tag.outputs.tag_name }}"
+          draft: false
+          prerelease: false
+      - name: Upload Release Asset
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./lapf
+          asset_name: lapf
+          asset_content_type: application/octet-stream
