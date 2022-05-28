@@ -35,10 +35,9 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-latest, macos-11 ]
-        sufix: ''
+        sufix: ['']
         include:
           - os: ubuntu-latest
-            sufix: ''
           - os: macos-11
             sufix: 'darwin'
     runs-on: ${{ matrix.os }}
@@ -58,7 +57,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ jobs.release.outputs.upload_url }}
+          upload_url: ${{ jobs.release.steps.create_release.outputs.upload_url }}
           asset_path: "./lapf-${{ matrix.sufix }}"
           asset_name: "lapf-${{ matrix.sufix }}"
           asset_content_type: application/octet-stream
