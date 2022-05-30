@@ -1,6 +1,6 @@
 ## LAPF - Overlapping Finder
 
-> Version: v0.0.3
+> Version: v0.0.4
 
 ------
 
@@ -76,7 +76,7 @@ chmod u+x lapf*
 
 ## Futures improvements
 
-- [ ] Ensuring input data
+- [x] Ensuring input data
 - [ ] Support for ipv6
 - [ ] Adding other cloud providers like Azure, GCP
 - [ ] Adding testing

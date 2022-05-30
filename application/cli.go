@@ -4,7 +4,11 @@ import (
 	"github.com/urfave/cli/v2"
 	"log"
 	"os"
+	"strings"
 )
+
+var cliAcceptedOutputFormat = []string{"text", "json"}
+var cliAcceptedCloudProvider = []string{"aws"}
 
 func New() {
 	app := &cli.App{
@@ -14,13 +18,13 @@ func New() {
 			&cli.StringFlag{
 				Name:        "provider",
 				Usage:       "Cloud Provider",
-				DefaultText: "aws",
-				Value:       "aws",
+				DefaultText: strings.Join(cliAcceptedCloudProvider, ", "),
+				Value:       cliAcceptedCloudProvider[0],
 			},
 			&cli.StringFlag{
 				Name:        "output",
 				Usage:       "Output format",
-				DefaultText: "text, json",
+				DefaultText: strings.Join(cliAcceptedOutputFormat, ", "),
 				Value:       "text",
 			},
 		},

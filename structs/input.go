@@ -1,9 +1,9 @@
 package inputs
 
-type RetrieveNetworkFromRegions struct {
-	ProviderName    string   `validate:"required"`
+type Ipv4Command struct {
+	ProviderName    string   `validate:"required,provider"`
 	ProviderProfile string   `validate:"required"`
-	OutputFormat    string   `validate:"required"`
+	OutputFormat    string   `validate:"required,output"`
 	Regions         []string `validate:"required"`
-	Arguments       []string `validate:"required"`
+	Arguments       []string `validate:"required,cidrv4"`
 }

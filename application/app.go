@@ -27,19 +27,7 @@ func newSpinner() *spinner.Spinner {
 	return s
 }
 
-func newInputValidate(input *inputs.RetrieveNetworkFromRegions) error {
-	validate = validator.New()
-
-	err := validate.Struct(input)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func retrieveAllNetworkFromRegions(input *inputs.RetrieveNetworkFromRegions) ([]provider.CloudNetwork, error) {
+func retrieveAllNetworkFromRegions(input *inputs.Ipv4Command) ([]provider.CloudNetwork, error) {
 	var wg sync.WaitGroup
 	var ch = make(chan *ResultDescribeAllNetwork)
 	var cloudNetworks []provider.CloudNetwork
@@ -75,7 +63,7 @@ func retrieveAllNetworkFromRegions(input *inputs.RetrieveNetworkFromRegions) ([]
 }
 
 func newOverlappingFinder(c *cli.Context) error {
-	input := &inputs.RetrieveNetworkFromRegions{
+	input := &inputs.Ipv4Command{
 		ProviderName:    c.String(cliProviderName),
 		ProviderProfile: c.String(cliProviderProfile),
 		OutputFormat:    c.String(cliOutputFormat),
