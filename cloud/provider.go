@@ -17,7 +17,7 @@ type CloudNetwork struct {
 	CidrBlock    string
 }
 
-func NewCloudProvider(in *inputs.RetrieveNetworkFromRegions, region string) (ICloudProvider, error) {
+func NewCloudProvider(in *inputs.Ipv4Command, region string) (ICloudProvider, error) {
 	if strings.ToLower(in.ProviderName) == "aws" {
 		return newAWSClient(in.ProviderProfile, region), nil
 	}
