@@ -5,7 +5,6 @@ import (
 	"golang.org/x/exp/slices"
 	"log"
 	"net"
-	inputs "overlapping-finder/structs"
 )
 
 const (
@@ -49,7 +48,7 @@ func isCloudProvider(fl validator.FieldLevel) bool {
 	return slices.Contains(cliAcceptedCloudProvider, fl.Field().String())
 }
 
-func newInputValidate(input *inputs.Ipv4Command) error {
+func newInputValidate(input interface{}) error {
 	if err := validate.Struct(input); err != nil {
 		return err
 	}
