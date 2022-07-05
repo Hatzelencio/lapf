@@ -59,5 +59,25 @@ func commands() []*cli.Command {
 			},
 			Action: newOverlappingFinder,
 		},
+		{
+			Name:        "ensure",
+			Description: "Ensures the IPv4 or CIDR Block is private, following RFC 1918",
+			Subcommands: []*cli.Command{
+				{
+					Name:        "cidr",
+					Description: "Ensures the CIDR Block is private, following RFC 1918",
+					Usage:       "lapf ensure cidr 192.168.0.0/24",
+					ArgsUsage:   "[optional | --show-ip-list] [target | <192.168.0.0/16> ... <N>]",
+					Flags: []cli.Flag{
+						&cli.BoolFlag{
+							Name:    "show-ip-list",
+							Aliases: []string{"show", "list"},
+							Usage:   "Includes the list of IPs out of private context.",
+						},
+					},
+					Action: isCIDRBlockPrivate,
+				},
+			},
+		},
 	}
 }

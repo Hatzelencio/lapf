@@ -9,5 +9,7 @@ type Ipv4Command struct {
 }
 
 type EnsureCIDRv4Command struct {
-	Arguments []string `validate:"required,cidrv4,min=1"`
+	ShowIPList   bool
+	OutputFormat string   `validate:"required,output"`
+	Arguments    []string `validate:"required,cidrv4,min=1"`
 }

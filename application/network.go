@@ -3,6 +3,7 @@ package application
 import (
 	"encoding/binary"
 	"net"
+	"net/netip"
 	provider "overlapping-finder/cloud"
 	"sync"
 )
@@ -18,6 +19,13 @@ type ResultIsContainsOverlap struct {
 	CurrentCidr  string
 	IsOverlap    bool
 	Err          error `json:"-"`
+}
+
+type ResultIsPrivateCIDRBlock struct {
+	CIDR         string   `json:"cidr"`
+	IsPrivate    bool     `json:"isPrivate"`
+	PublicIPList []string `json:"publicIPList,omitempty"`
+	Err          error    `json:"-"`
 }
 
 type ipv4CIDR struct {
@@ -76,6 +84,49 @@ func ensureCIDRBlock(networks []provider.CloudNetwork, cidrBlocks []string) ([]*
 		for range cidrBlocks {
 			results = append(results, <-ch)
 		}
+	}
+
+	wg.Wait()
+
+	return results, nil
+}
+
+func ensureIsPrivateCIDRBlock(cidrBlocks []string, showIPList bool) ([]*ResultIsPrivateCIDRBlock, error) {
+	var wg sync.WaitGroup
+	var ch = make(chan *ResultIsPrivateCIDRBlock)
+	var results []*ResultIsPrivateCIDRBlock
+
+	for _, currentCidr := range cidrBlocks {
+		wg.Add(1)
+
+		go func(currentCidr string, showIPList bool) {
+			defer wg.Done()
+
+			var isPrivate = true
+			var publicIPList []string
+
+			prefix, err := netip.ParsePrefix(currentCidr)
+			for addr := prefix.Addr(); prefix.Contains(addr); addr = addr.Next() {
+				if !addr.IsPrivate() {
+					isPrivate = false
+
+					if showIPList {
+						publicIPList = append(publicIPList, addr.String())
+					}
+				}
+			}
+
+			ch <- &ResultIsPrivateCIDRBlock{
+				CIDR:         currentCidr,
+				IsPrivate:    isPrivate,
+				PublicIPList: publicIPList,
+				Err:          err,
+			}
+		}(currentCidr, showIPList)
+	}
+
+	for range cidrBlocks {
+		results = append(results, <-ch)
 	}
 
 	wg.Wait()
