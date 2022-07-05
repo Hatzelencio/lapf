@@ -1,6 +1,6 @@
 ## LAPF - Overlapping Finder
 
-> Version: v0.0.4
+> Version: v0.0.5
 
 ------
 
@@ -38,6 +38,8 @@ curl -s https://api.github.com/repos/hatzelencio/lapf/releases/latest \
 chmod u+x lapf*
 ```
 
+## Overlap
+
 ### RAW Output
 
 ```bash
@@ -68,6 +70,47 @@ chmod u+x lapf*
     },
     "CurrentCidr": "10.0.0.0/8",
     "IsOverlap": true
+  }
+]
+```
+
+------
+## Is CIDR Block private?
+### RAW Output
+
+```bash
+./lapf ensure cidr 10.0.0.0/16 172.10.0.0/22 192.168.1.0/24
+```
+
+```text
+[✓][192.168.1.0/24] is private
+[x][172.10.0.0/22] is not private
+[✓][10.0.0.0/16] is private
+```
+
+### JSON Output
+
+> Bear in mind, flag `--show-ip-list` only works over output json
+
+```bash
+./lapf --output json ensure cidr --show-ip-list 11.0.0.0/30 10.10.20.0/24
+```
+
+```json
+[
+  {
+    "cidr": "10.10.20.0/24",
+    "isPrivate": true
+  },
+  {
+    "cidr": "11.0.0.0/30",
+    "isPrivate": false,
+    "publicIPList": [
+      "11.0.0.0",
+      "11.0.0.1",
+      "11.0.0.2",
+      "11.0.0.3"
+    ]
   }
 ]
 ```

@@ -17,6 +17,7 @@ const (
 	cliRegionName      = "region"
 	cliProviderName    = "provider"
 	cliProviderProfile = "profile"
+	cliShowIPList      = "show-ip-list"
 	cliOutputFormat    = "output"
 )
 
@@ -94,7 +95,29 @@ func newOverlappingFinder(c *cli.Context) error {
 	}
 	s.Stop()
 
-	PrintResults(input.OutputFormat, results)
+	PrintOverlapResults(input.OutputFormat, results)
+
+	return nil
+}
+
+func isCIDRBlockPrivate(c *cli.Context) error {
+	input := &inputs.EnsureCIDRv4Command{
+		ShowIPList:   c.Bool(cliShowIPList),
+		OutputFormat: c.String(cliOutputFormat),
+		Arguments:    c.Args().Slice(),
+	}
+
+	if err := newInputValidate(input); err != nil {
+		return err
+	}
+
+	results, err := ensureIsPrivateCIDRBlock(input.Arguments, input.ShowIPList)
+
+	if err != nil {
+		return err
+	}
+
+	PrintIsCIDRPrivateResults(input.OutputFormat, results)
 
 	return nil
 }
