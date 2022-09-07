@@ -12,6 +12,9 @@ import (
 )
 
 var validate *validator.Validate
+var stdinResultIsContainsOverlap []*ResultIsContainsOverlap
+var stdinArguments []string
+var s *spinner.Spinner
 
 const (
 	cliRegionName      = "region"
@@ -21,6 +24,22 @@ const (
 	cliOutputFormat    = "output"
 )
 
+func init() {
+	s = newSpinner()
+
+	if hasPipeContent() {
+		s.Suffix = " Retrieving arguments from Stdin"
+		s.Start()
+		var err error
+		stdinResultIsContainsOverlap, stdinArguments, err = retrieveStdinArguments()
+		if err != nil {
+			s.Stop()
+			log.Fatal(err)
+		}
+		s.Stop()
+	}
+}
+
 func newSpinner() *spinner.Spinner {
 	s := spinner.New(spinner.CharSets[11], 100*time.Millisecond)
 	s.Suffix = " Retrieving CloudNetwork from regions"
@@ -28,10 +47,11 @@ func newSpinner() *spinner.Spinner {
 	return s
 }
 
-func retrieveAllNetworkFromRegions(input *inputs.Ipv4Command) ([]provider.CloudNetwork, error) {
+func retrieveAllNetworkFromRegions(input *inputs.Ipv4Command) (provider.CloudAccount, []provider.CloudNetwork, error) {
 	var wg sync.WaitGroup
 	var ch = make(chan *ResultDescribeAllNetwork)
 	var cloudNetworks []provider.CloudNetwork
+	var cloudAccount provider.CloudAccount
 
 	for _, region := range input.Regions {
 		wg.Add(1)
@@ -42,6 +62,10 @@ func retrieveAllNetworkFromRegions(input *inputs.Ipv4Command) ([]provider.CloudN
 				log.Fatalf("%v", err)
 			}
 			result, err := svc.RetrieveVpc()
+			if cloudNetworks == nil {
+				cloudAccount, err = svc.RetrieveAccountInfo()
+			}
+
 			ch <- &ResultDescribeAllNetwork{
 				Networks: result,
 				Region:   region,
@@ -53,14 +77,14 @@ func retrieveAllNetworkFromRegions(input *inputs.Ipv4Command) ([]provider.CloudN
 	for range input.Regions {
 		resultDescribeAllNetworks := <-ch
 		if err := resultDescribeAllNetworks.Err; err != nil {
-			return []provider.CloudNetwork{}, err
+			return provider.CloudAccount{}, []provider.CloudNetwork{}, err
 		}
 		cloudNetworks = append(cloudNetworks, resultDescribeAllNetworks.Networks...)
 	}
 
 	wg.Wait()
 
-	return cloudNetworks, nil
+	return cloudAccount, cloudNetworks, nil
 }
 
 func newOverlappingFinder(c *cli.Context) error {
@@ -69,17 +93,17 @@ func newOverlappingFinder(c *cli.Context) error {
 		ProviderProfile: c.String(cliProviderProfile),
 		OutputFormat:    c.String(cliOutputFormat),
 		Regions:         c.StringSlice(cliRegionName),
-		Arguments:       c.Args().Slice(),
+		Arguments:       append(c.Args().Slice(), stdinArguments...),
 	}
 
 	if err := newInputValidate(input); err != nil {
 		return err
 	}
 
-	s := newSpinner()
+	s.Suffix = ""
 	s.Start()
 
-	networks, err := retrieveAllNetworkFromRegions(input)
+	account, networks, err := retrieveAllNetworkFromRegions(input)
 
 	if err != nil {
 		log.Fatalf("Something wrong happened: %v", err)
@@ -89,13 +113,14 @@ func newOverlappingFinder(c *cli.Context) error {
 	s.Suffix = " Ensuring CloudNetwork CIDR Blocks"
 	s.Start()
 
-	results, err := ensureCIDRBlock(networks, input.Arguments)
+	results, err := ensureCIDRBlock(account, networks, input.Arguments)
+
 	if err != nil {
 		log.Fatalf("Something wrong happened: %v", err)
 	}
 	s.Stop()
 
-	PrintOverlapResults(input.OutputFormat, results)
+	PrintOverlapResults(input.OutputFormat, append(results, stdinResultIsContainsOverlap...))
 
 	return nil
 }

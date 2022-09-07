@@ -9,12 +9,18 @@ import (
 
 type ICloudProvider interface {
 	RetrieveVpc() ([]CloudNetwork, error)
+	RetrieveAccountInfo() (CloudAccount, error)
 }
 
 type CloudNetwork struct {
-	Name         string
+	Id        string
+	Name      string
+	CidrBlock string
+}
+
+type CloudAccount struct {
+	Id           string
 	ProviderName string
-	CidrBlock    string
 }
 
 func NewCloudProvider(in *inputs.Ipv4Command, region string) (ICloudProvider, error) {

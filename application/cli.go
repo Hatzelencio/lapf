@@ -13,7 +13,7 @@ var cliAcceptedCloudProvider = []string{"aws"}
 func New() {
 	app := &cli.App{
 		Name:  "Overlapping Finder",
-		Usage: "Overlapping Finder (a.k.a \"lapf\") is a binary-tool made and built in golang to find possible overlapping CIDR Block notation through cloud providers (AWS)",
+		Usage: "Overlapping Finder (a.k.a \"lapf\") is a binary-tool made and built info golang to find possible overlapping CIDR Block notation through cloud providers (AWS)",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:        "provider",

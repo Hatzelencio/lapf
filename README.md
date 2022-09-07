@@ -1,6 +1,6 @@
 ## LAPF - Overlapping Finder
 
-> Version: v0.0.5
+> Version: v0.0.7
 
 ------
 
@@ -74,6 +74,25 @@ chmod u+x lapf*
 ]
 ```
 
+### Streaming  pipeline results with other accounts
+
+> [WARN] Bear in mind, flag `--output json` must be set up before pipelining your command, otherwise, you can not be able to performance it.
+
+
+```bash
+./lapf --output json --provider aws \
+  ipv4 --profile blue --region us-west-1 10.0.0.0/24 | \
+./lapf --provider aws \
+  ipv4 --profile green --region us-east-1
+```
+
+```text
+[ ][10.0.0.0/24]	is not overlapping at: "aws GreenAccount" (vpc-zyw = Default [172.31.0.0/16])
+[ ][10.0.0.0/24]	is not overlapping at: "aws GreenAccount" (vpc-zyv = GreenVpc [10.120.0.0/16])
+[ ][10.0.0.0/24]	is not overlapping at: "aws BlueAccount" (vpc-abd = Default [172.31.0.0/16])
+[X][10.0.0.0/24]	is overlapping at:     "aws BlueAccount" (vpc-abc = BlueVpc [10.0.0.0/16])
+```
+
 ------
 ## Is CIDR Block private?
 ### RAW Output
@@ -120,6 +139,7 @@ chmod u+x lapf*
 ## Futures improvements
 
 - [x] Ensuring input data
+- [x] Fix default account credentials for AWS Provider
 - [ ] Support for ipv6
 - [ ] Adding other cloud providers like Azure, GCP
 - [ ] Adding testing

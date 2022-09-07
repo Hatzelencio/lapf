@@ -15,6 +15,7 @@ type ResultDescribeAllNetwork struct {
 }
 
 type ResultIsContainsOverlap struct {
+	CloudAccount provider.CloudAccount
 	CloudNetwork provider.CloudNetwork
 	CurrentCidr  string
 	IsOverlap    bool
@@ -55,7 +56,7 @@ func parseCIDRBlockToIpv4(cidr string) (*ipv4CIDR, error) {
 	}, nil
 }
 
-func ensureCIDRBlock(networks []provider.CloudNetwork, cidrBlocks []string) ([]*ResultIsContainsOverlap, error) {
+func ensureCIDRBlock(cloudAccount provider.CloudAccount, networks []provider.CloudNetwork, cidrBlocks []string) ([]*ResultIsContainsOverlap, error) {
 	var wg sync.WaitGroup
 	var ch = make(chan *ResultIsContainsOverlap)
 	var results []*ResultIsContainsOverlap
@@ -64,19 +65,20 @@ func ensureCIDRBlock(networks []provider.CloudNetwork, cidrBlocks []string) ([]*
 		for _, currentCidr := range cidrBlocks {
 			wg.Add(1)
 
-			go func(cloudNetwork provider.CloudNetwork, currentCidr string) {
+			go func(cloudAccount provider.CloudAccount, cloudNetwork provider.CloudNetwork, currentCidr string) {
 				defer wg.Done()
 
 				parsedCidr, err := parseCIDRBlockToIpv4(currentCidr)
 				cidr, err := parseCIDRBlockToIpv4(cloudNetwork.CidrBlock)
 				isOverlap := cidr.contains(parsedCidr)
 				ch <- &ResultIsContainsOverlap{
+					CloudAccount: cloudAccount,
 					CloudNetwork: cloudNetwork,
 					CurrentCidr:  parsedCidr.Network.String(),
 					IsOverlap:    isOverlap,
 					Err:          err,
 				}
-			}(network, currentCidr)
+			}(cloudAccount, network, currentCidr)
 		}
 	}
 
