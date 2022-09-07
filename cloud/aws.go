@@ -2,9 +2,12 @@ package provider
 
 import (
 	"context"
+	"fmt"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"log"
+	"os"
 )
 
 type ClientAWS struct {
@@ -13,10 +16,20 @@ type ClientAWS struct {
 }
 
 func newAWSClient(profile, region string) *ClientAWS {
-	cfg, err := config.LoadDefaultConfig(context.TODO(),
-		config.WithRegion(region),
-		config.WithSharedConfigProfile(profile),
-	)
+	var cfg aws.Config
+	var err error
+
+	if len(profile) == 0 {
+		fmt.Fprintln(os.Stderr, "[WARN] AWS_PROFILE variable did not define")
+		fmt.Fprintln(os.Stderr, "[WARN] ensure if was set a valid access_keys")
+		cfg, err = config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
+	} else {
+		cfg, err = config.LoadDefaultConfig(context.TODO(),
+			config.WithRegion(region),
+			config.WithSharedConfigProfile(profile),
+		)
+	}
+
 	if err != nil {
 		log.Fatalf("unable to load SDK config, %v", err)
 	}
