@@ -47,10 +47,11 @@ func newSpinner() *spinner.Spinner {
 	return s
 }
 
-func retrieveAllNetworkFromRegions(input *inputs.Ipv4Command) ([]provider.CloudNetwork, error) {
+func retrieveAllNetworkFromRegions(input *inputs.Ipv4Command) (provider.CloudAccount, []provider.CloudNetwork, error) {
 	var wg sync.WaitGroup
 	var ch = make(chan *ResultDescribeAllNetwork)
 	var cloudNetworks []provider.CloudNetwork
+	var cloudAccount provider.CloudAccount
 
 	for _, region := range input.Regions {
 		wg.Add(1)
@@ -61,6 +62,10 @@ func retrieveAllNetworkFromRegions(input *inputs.Ipv4Command) ([]provider.CloudN
 				log.Fatalf("%v", err)
 			}
 			result, err := svc.RetrieveVpc()
+			if cloudNetworks == nil {
+				cloudAccount, err = svc.RetrieveAccountInfo()
+			}
+
 			ch <- &ResultDescribeAllNetwork{
 				Networks: result,
 				Region:   region,
@@ -72,14 +77,14 @@ func retrieveAllNetworkFromRegions(input *inputs.Ipv4Command) ([]provider.CloudN
 	for range input.Regions {
 		resultDescribeAllNetworks := <-ch
 		if err := resultDescribeAllNetworks.Err; err != nil {
-			return []provider.CloudNetwork{}, err
+			return provider.CloudAccount{}, []provider.CloudNetwork{}, err
 		}
 		cloudNetworks = append(cloudNetworks, resultDescribeAllNetworks.Networks...)
 	}
 
 	wg.Wait()
 
-	return cloudNetworks, nil
+	return cloudAccount, cloudNetworks, nil
 }
 
 func newOverlappingFinder(c *cli.Context) error {
@@ -98,7 +103,7 @@ func newOverlappingFinder(c *cli.Context) error {
 	s.Suffix = ""
 	s.Start()
 
-	networks, err := retrieveAllNetworkFromRegions(input)
+	account, networks, err := retrieveAllNetworkFromRegions(input)
 
 	if err != nil {
 		log.Fatalf("Something wrong happened: %v", err)
@@ -108,7 +113,7 @@ func newOverlappingFinder(c *cli.Context) error {
 	s.Suffix = " Ensuring CloudNetwork CIDR Blocks"
 	s.Start()
 
-	results, err := ensureCIDRBlock(networks, input.Arguments)
+	results, err := ensureCIDRBlock(account, networks, input.Arguments)
 
 	if err != nil {
 		log.Fatalf("Something wrong happened: %v", err)

@@ -6,13 +6,16 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
+	"github.com/aws/aws-sdk-go-v2/service/sts"
 	"log"
 	"os"
+	"strings"
 )
 
 type ClientAWS struct {
 	ICloudProvider
-	cli *ec2.Client
+	ec2 *ec2.Client
+	sts *sts.Client
 }
 
 func newAWSClient(profile, region string) *ClientAWS {
@@ -34,23 +37,44 @@ func newAWSClient(profile, region string) *ClientAWS {
 		log.Fatalf("unable to load SDK config, %v", err)
 	}
 
-	return &ClientAWS{cli: ec2.NewFromConfig(cfg)}
+	return &ClientAWS{ec2: ec2.NewFromConfig(cfg), sts: sts.NewFromConfig(cfg)}
 }
 
 func (c *ClientAWS) RetrieveVpc() ([]CloudNetwork, error) {
 	var networks []CloudNetwork
 
-	resp, err := c.cli.DescribeVpcs(context.TODO(), &ec2.DescribeVpcsInput{})
+	resp, err := c.ec2.DescribeVpcs(context.TODO(), &ec2.DescribeVpcsInput{})
 	if err != nil {
 		return []CloudNetwork{}, err
 	}
 
 	for _, vpc := range resp.Vpcs {
+		var vpcName string
+
+		for _, tag := range vpc.Tags {
+			if strings.EqualFold(*tag.Key, "Name") {
+				vpcName = *tag.Value
+			}
+		}
 		networks = append(networks, CloudNetwork{
-			Name:         *vpc.VpcId,
-			ProviderName: "aws",
-			CidrBlock:    *vpc.CidrBlock,
+			Id:        *vpc.VpcId,
+			Name:      vpcName,
+			CidrBlock: *vpc.CidrBlock,
 		})
 	}
 	return networks, nil
+}
+
+func (c *ClientAWS) RetrieveAccountInfo() (CloudAccount, error) {
+	var account CloudAccount
+
+	resp, err := c.sts.GetCallerIdentity(context.TODO(), &sts.GetCallerIdentityInput{})
+	if err != nil {
+		return CloudAccount{}, err
+	}
+
+	account.Id = *resp.Account
+	account.ProviderName = "aws"
+
+	return account, nil
 }

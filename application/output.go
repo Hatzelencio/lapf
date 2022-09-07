@@ -16,10 +16,12 @@ func PrintOverlapResults(output string, results []*ResultIsContainsOverlap) {
 
 func printOverlapResultToText(results []*ResultIsContainsOverlap) {
 	for _, item := range results {
+		var originAccount = fmt.Sprintf("%s %s", item.CloudAccount.ProviderName, item.CloudAccount.Id)
+		var originNetwork = fmt.Sprintf("%s = %s [%s]", item.CloudNetwork.Id, item.CloudNetwork.Name, item.CloudNetwork.CidrBlock)
 		if item.IsOverlap {
-			fmt.Println(fmt.Sprintf("[X][%v]\tis overlapping at: \"%v\" (%v)", item.CurrentCidr, item.CloudNetwork.ProviderName, item.CloudNetwork.Name))
+			fmt.Println(fmt.Sprintf("[X][%v]\tis overlapping at: \"%v\" (%v)", item.CurrentCidr, originAccount, originNetwork))
 		} else {
-			fmt.Println(fmt.Sprintf("[ ][%v]\tis not overlapping at: \"%v\" (%v)", item.CurrentCidr, item.CloudNetwork.ProviderName, item.CloudNetwork.Name))
+			fmt.Println(fmt.Sprintf("[ ][%v]\tis not overlapping at: \"%v\" (%v)", item.CurrentCidr, originAccount, originNetwork))
 		}
 	}
 }
