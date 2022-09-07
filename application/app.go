@@ -14,6 +14,7 @@ import (
 var validate *validator.Validate
 var stdinResultIsContainsOverlap []*ResultIsContainsOverlap
 var stdinArguments []string
+var s *spinner.Spinner
 
 const (
 	cliRegionName      = "region"
@@ -22,6 +23,22 @@ const (
 	cliShowIPList      = "show-ip-list"
 	cliOutputFormat    = "output"
 )
+
+func init() {
+	s = newSpinner()
+
+	if hasPipeContent() {
+		s.Suffix = " Retrieving arguments from Stdin"
+		s.Start()
+		var err error
+		stdinResultIsContainsOverlap, stdinArguments, err = retrieveStdinArguments()
+		if err != nil {
+			s.Stop()
+			log.Fatal(err)
+		}
+		s.Stop()
+	}
+}
 
 func newSpinner() *spinner.Spinner {
 	s := spinner.New(spinner.CharSets[11], 100*time.Millisecond)
@@ -66,20 +83,6 @@ func retrieveAllNetworkFromRegions(input *inputs.Ipv4Command) ([]provider.CloudN
 }
 
 func newOverlappingFinder(c *cli.Context) error {
-	s := newSpinner()
-
-	if hasPipeContent() {
-		s.Suffix = " Retrieving arguments from Stdin"
-		s.Start()
-		var err error
-		stdinResultIsContainsOverlap, stdinArguments, err = retrieveStdinArguments()
-		if err != nil {
-			s.Stop()
-			return err
-		}
-		s.Stop()
-	}
-
 	input := &inputs.Ipv4Command{
 		ProviderName:    c.String(cliProviderName),
 		ProviderProfile: c.String(cliProviderProfile),

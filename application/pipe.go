@@ -6,16 +6,11 @@ import (
 	"os"
 )
 
-var info os.FileInfo
-
-func init() {
-	var err error
-	info, err = os.Stdin.Stat()
+func hasPipeContent() bool {
+	info, err := os.Stdin.Stat()
 	if err != nil {
 		panic(err)
 	}
-}
-func hasPipeContent() bool {
 	return !(info.Mode()&os.ModeNamedPipe == 0)
 }
 
